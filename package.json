@@ -1,0 +1,67 @@
+{
+  "name": "bambu-3mf",
+  "version": "0.1.0",
+  "description": "Generate BambuStudio-compatible .3mf packages from Three.js geometry — full process/filament/printer parameter catalog, multi-color, modifiers, per-triangle painting, variable layer height, multi-plate. Browser or Node.",
+  "keywords": [
+    "3mf",
+    "bambu",
+    "bambustudio",
+    "bambulab",
+    "3d-printing",
+    "slicer",
+    "three",
+    "threejs",
+    "mmu",
+    "multicolor"
+  ],
+  "license": "MIT",
+  "author": "vivapercuore",
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "jest",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "three": ">=0.150.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "fflate": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/three": ">=0.150.0",
+    "jest": "^29.7.0",
+    "three": ">=0.150.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
