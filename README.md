@@ -36,10 +36,10 @@
 ## 安装
 
 ```bash
-npm i bambu-3mf three fflate
+npm i bambu-3mf three
 ```
 
-`three` 是 **peer 依赖**（由你提供）。`fflate`（zip）是普通依赖。
+`three` 是 **peer 依赖**（由你提供，全工程共用同一份）。`fflate`（zip）是普通依赖，随包**自动安装**。
 
 ---
 

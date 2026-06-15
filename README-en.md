@@ -44,10 +44,11 @@ painting (MMU), variable layer height, multiple plates, instances, custom gcode
 ## Install
 
 ```bash
-npm i bambu-3mf three fflate
+npm i bambu-3mf three
 ```
 
-`three` is a **peer dependency** (you bring your own). `fflate` (zip) is a dependency.
+`three` is a **peer dependency** (you bring your own — one shared copy across the app).
+`fflate` (zip) is a regular dependency, installed **automatically** with the package.
 
 ---
 
