@@ -11,7 +11,7 @@
 > 进：Three.js 几何（Y-up）；出：可直接切片的 `.3mf`。纯同步核心，不依赖 DOM。
 
 **目录：** [亮点](#亮点) · [安装](#安装) · [快速上手](#快速上手) · [几何约定](#几何约定) ·
-[API](#api) · [指南](#指南) · [支持的功能](#支持的功能) · [工艺参数目录](#工艺参数目录) ·
+[准备输入数据](#准备输入数据从已有文件导入) · [API](#api) · [指南](#指南) · [支持的功能](#支持的功能) · [工艺参数目录](#工艺参数目录) ·
 [绘制编码](#绘制编码) · [测试](#测试) · [构建/发布](#构建--发布) · [状态与注意事项](#状态与注意事项)
 
 ---
@@ -106,6 +106,70 @@ const zip = pack3mfFromConfig(
   [{ name: 'from-stl', geometry: { position } }] // 三角汤，无需 index
 );
 ```
+
+---
+
+## 准备输入数据（从已有文件导入）
+
+喂给 `geometry` 的数据必须满足：
+
+- **三角网格**：扁平 `position`（`x,y,z,…`）或 `THREE.BufferGeometry`，`index` 可选。
+- **单位是毫米（mm）**：源文件若是英寸/米，先缩放。
+- **Y-up**：高度沿 `+Y`。很多 **STL / CAD 文件是 Z-up**，要先转成 Y-up（绕 X 轴 −90°，即 `(x,y,z) → (x, z, −y)`）。
+- 三角面外法线朝外（多数加载器已正确）；包保留你的绕序、不改法线。
+- 不强制水密/流形，但切片建议尽量水密。绝对位置无所谓（自动居中并落到 `z=0`），**朝向和缩放要对**。
+
+### 方案 A：已经在用 three —— 直接用 three 的 loader
+
+拿到 `BufferGeometry` 后直接传（必要时先转 Y-up / 缩放）：
+
+| 文件 | Loader（`three/examples/jsm/loaders/…`） |
+|---|---|
+| STL | `STLLoader` |
+| OBJ | `OBJLoader` |
+| glTF / glb | `GLTFLoader` |
+| PLY | `PLYLoader` |
+| 3MF | `ThreeMFLoader` |
+
+```ts
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+
+const geom = new STLLoader().parse(stlArrayBuffer); // BufferGeometry
+geom.rotateX(-Math.PI / 2); // 若文件是 Z-up，转成本库要的 Y-up（按需）
+// geom.scale(s, s, s);     // 若单位不是 mm
+// 然后：geometry: geom
+```
+
+### 方案 B：不想引入 three —— 解析成扁平 `position` 传 RawMesh
+
+- STL：`stl-parser` / `node-stl` / `parse-stl`；OBJ：`parse-wavefront-obj` / `wavefront-obj-parser`。
+- 或者用下面这段无依赖的二进制 STL 解析（已顺手把 Z-up 转成 Y-up）：
+
+```ts
+/** 二进制 STL → Y-up 扁平 position（无依赖）。 */
+function stlToYUpPositions(buf: ArrayBuffer): Float32Array {
+  const dv = new DataView(buf);
+  const tris = dv.getUint32(80, true);
+  const out = new Float32Array(tris * 9);
+  let o = 84, p = 0;
+  for (let i = 0; i < tris; i++) {
+    o += 12; // 跳过面法线
+    for (let v = 0; v < 3; v++) {
+      const x = dv.getFloat32(o, true);
+      const y = dv.getFloat32(o + 4, true);
+      const z = dv.getFloat32(o + 8, true);
+      out[p++] = x; out[p++] = z; out[p++] = -y; // Z-up → Y-up
+      o += 12;
+    }
+    o += 2; // 跳过 attribute byte count
+  }
+  return out;
+}
+// geometry: { position: stlToYUpPositions(buf) }
+```
+
+> 数据本就是 Y-up（本库自带的 relief/laser 几何、或 OBJ/glTF 多为 Y-up）就不用旋转。拿不准朝向时，
+> 导出后在 BambuStudio 里看一眼，反了就加上/去掉那次 `rotateX`。
 
 ---
 

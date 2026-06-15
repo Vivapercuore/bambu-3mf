@@ -15,7 +15,7 @@ painting (MMU), variable layer height, multiple plates, instances, custom gcode
 > no DOM required.
 
 **Contents:** [Highlights](#highlights) · [Install](#install) · [Quick start](#quick-start) ·
-[Geometry](#geometry-convention) · [API](#api) · [Guides](#guides) ·
+[Geometry](#geometry-convention) · [Importing files](#preparing-input-data-importing-your-own-files) · [API](#api) · [Guides](#guides) ·
 [Supported functions](#supported-functions) · [Parameter catalog](#process-parameter-catalog) ·
 [Painting encoding](#painting-encoding) · [Testing](#testing) · [Building](#building--publishing) ·
 [Status](#status--caveats)
@@ -118,6 +118,70 @@ const zip = pack3mfFromConfig(
   [{ name: 'from-stl', geometry: { position } }] // triangle soup, no index needed
 );
 ```
+
+---
+
+## Preparing input data (importing your own files)
+
+Whatever you pass as `geometry` must be:
+
+- a **triangle mesh**: a flat `position` (`x,y,z,…`) or a `THREE.BufferGeometry`, optional `index`;
+- in **millimetres** — scale first if the source is inches/metres;
+- **Y-up** (height on `+Y`). Many **STL / CAD files are Z-up** → convert to Y-up first (rotate −90° about X, i.e. `(x,y,z) → (x, z, −y)`);
+- wound so triangle normals face outward (most loaders already do); the library preserves your winding;
+- not required to be watertight/manifold, but watertight slices best. Absolute position doesn't matter (auto-centred, dropped to `z=0`); **orientation and scale do**.
+
+### Option A — you already use three: use three's loaders
+
+Get a `BufferGeometry`, then pass it (rotate to Y-up / scale if needed):
+
+| File | Loader (`three/examples/jsm/loaders/…`) |
+|---|---|
+| STL | `STLLoader` |
+| OBJ | `OBJLoader` |
+| glTF / glb | `GLTFLoader` |
+| PLY | `PLYLoader` |
+| 3MF | `ThreeMFLoader` |
+
+```ts
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+
+const geom = new STLLoader().parse(stlArrayBuffer); // BufferGeometry
+geom.rotateX(-Math.PI / 2); // if the file is Z-up, convert to this library's Y-up
+// geom.scale(s, s, s);     // if units aren't mm
+// then: geometry: geom
+```
+
+### Option B — no three: parse to a flat `position` (RawMesh)
+
+- STL: `stl-parser` / `node-stl` / `parse-stl`; OBJ: `parse-wavefront-obj` / `wavefront-obj-parser`.
+- Or this dependency-free binary-STL parser (also converts Z-up → Y-up):
+
+```ts
+/** Binary STL → Y-up flat position (no deps). */
+function stlToYUpPositions(buf: ArrayBuffer): Float32Array {
+  const dv = new DataView(buf);
+  const tris = dv.getUint32(80, true);
+  const out = new Float32Array(tris * 9);
+  let o = 84, p = 0;
+  for (let i = 0; i < tris; i++) {
+    o += 12; // skip the facet normal
+    for (let v = 0; v < 3; v++) {
+      const x = dv.getFloat32(o, true);
+      const y = dv.getFloat32(o + 4, true);
+      const z = dv.getFloat32(o + 8, true);
+      out[p++] = x; out[p++] = z; out[p++] = -y; // Z-up → Y-up
+      o += 12;
+    }
+    o += 2; // skip attribute byte count
+  }
+  return out;
+}
+// geometry: { position: stlToYUpPositions(buf) }
+```
+
+> Data that's already Y-up (this library's own relief/laser geometry, or most OBJ/glTF) needs no
+> rotation. Unsure which way is up? Export and glance at it in BambuStudio — flip the `rotateX` if upside-down.
 
 ---
 
