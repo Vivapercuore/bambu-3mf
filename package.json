@@ -37,6 +37,7 @@
     "build": "tsc -p tsconfig.json",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "test": "jest",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "peerDependencies": {
@@ -52,9 +53,9 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
-    "@types/three": ">=0.150.0",
+    "@types/three": "^0.160.0",
     "jest": "^29.7.0",
-    "three": ">=0.150.0",
+    "three": "^0.160.0",
     "ts-jest": "^29.1.0",
     "typescript": "^5.4.0"
   },
