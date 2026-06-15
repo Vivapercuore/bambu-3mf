@@ -39,7 +39,8 @@
 npm i bambu-3mf three
 ```
 
-`three` 是 **peer 依赖**（由你提供，全工程共用同一份）。`fflate`（zip）是普通依赖，随包**自动安装**。
+`three` 是**可选** peer 依赖：只有当你传入 `THREE.BufferGeometry` 时才需要（全工程共用同一份）。
+如果你只传原始网格（见[几何约定](#几何约定)），可以**完全不装 three**。`fflate`（zip）是普通依赖，随包自动安装。
 
 ---
 
@@ -85,9 +86,26 @@ const zip = await pack3mf(
 
 ## 几何约定
 
-输入几何是 **Three.js Y-up**：高度在 `+Y`，平铺在 XZ 平面，底面在 `y = 0`。内部会旋转到 3MF 的
-**Z-up 毫米**坐标系。`Object3mf.geometry` 可以是单个 `BufferGeometry`，也可以是数组 —— 数组每一项
-都作为**独立实体**焊接（相邻部件保持流形，实体之间绝不融合）。
+输入几何是 **Y-up**：高度在 `+Y`，平铺在 XZ 平面，底面在 `y = 0`。内部会旋转到 3MF 的 **Z-up 毫米**
+坐标系。`Object3mf.geometry` 可以是单个几何，也可以是数组 —— 数组每一项都作为**独立实体**焊接
+（相邻部件保持流形，实体之间绝不融合）。
+
+每个几何可以是下面任意一种 —— **不绑定 three**：
+
+- 一个 **Three.js `BufferGeometry`**（按结构识别，包本身并不 `import three`）；或
+- 一份**与框架无关的原始网格** `RawMesh = { position, index? }`：`position` 是扁平的 Y-up 顶点数组
+  （`x,y,z,x,y,z,…`），`index` 可选。**这样 STL / OBJ / 任意解析器的数据都能直接喂进来，无需 three。**
+
+```ts
+// STL → 3MF（不依赖 three）：STL 本身就是三角汤，把每个面的 3 个顶点拼成一个扁平数组即可
+import { pack3mfFromConfig } from 'bambu-3mf';
+
+const position = parseStlToYUpPositions(stlBytes); // 任意 STL 解析器，输出扁平 Y-up 顶点数组
+const zip = pack3mfFromConfig(
+  { projectSettings },
+  [{ name: 'from-stl', geometry: { position } }] // 三角汤，无需 index
+);
+```
 
 ---
 

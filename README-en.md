@@ -47,8 +47,9 @@ painting (MMU), variable layer height, multiple plates, instances, custom gcode
 npm i bambu-3mf three
 ```
 
-`three` is a **peer dependency** (you bring your own — one shared copy across the app).
-`fflate` (zip) is a regular dependency, installed **automatically** with the package.
+`three` is an **optional** peer dependency: needed only if you pass a `THREE.BufferGeometry`
+(one shared copy across the app). If you only pass raw meshes (see [Geometry](#geometry-convention)),
+you can skip `three` entirely. `fflate` (zip) is a regular dependency, installed automatically.
 
 ---
 
@@ -95,10 +96,28 @@ then calls `pack3mfFromConfig`.
 
 ## Geometry convention
 
-Input geometry is **Three.js Y-up**: height on `+Y`, lying on the XZ plane, base at
-`y = 0`. It is rotated into 3MF's **Z-up millimetre** frame internally. An
-`Object3mf.geometry` may be a single `BufferGeometry` or an array — each array entry
-is welded as an **independent solid** (touching parts stay manifold; bodies never fuse).
+Input geometry is **Y-up**: height on `+Y`, lying on the XZ plane, base at `y = 0`. It is
+rotated into 3MF's **Z-up millimetre** frame internally. An `Object3mf.geometry` may be a
+single geometry or an array — each array entry is welded as an **independent solid**
+(touching parts stay manifold; bodies never fuse).
+
+Each geometry can be either — **no three required**:
+
+- a **Three.js `BufferGeometry`** (recognised structurally; the library never `import`s three); or
+- a **framework-agnostic raw mesh** `RawMesh = { position, index? }`: `position` is a flat Y-up
+  vertex array (`x,y,z,x,y,z,…`), `index` optional. **So data from STL / OBJ / any parser feeds
+  in directly, without three.**
+
+```ts
+// STL → 3MF (no three): STL is already a triangle soup — flatten each facet's 3 vertices
+import { pack3mfFromConfig } from 'bambu-3mf';
+
+const position = parseStlToYUpPositions(stlBytes); // any STL parser → flat Y-up vertex array
+const zip = pack3mfFromConfig(
+  { projectSettings },
+  [{ name: 'from-stl', geometry: { position } }] // triangle soup, no index needed
+);
+```
 
 ---
 

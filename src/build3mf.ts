@@ -1,7 +1,6 @@
-import * as THREE from 'three';
 import { zipSync, strToU8, Zippable } from 'fflate';
 import { CONTENT_TYPES, ROOT_RELS, SLICE_INFO, BambuProjectMeta } from './templates';
-import { geometryToMesh, MeshXml, TrianglePaint } from './mesh';
+import { geometryToMesh, GeometryInput, MeshXml, TrianglePaint, V3 } from './mesh';
 import { linearOf, layout } from './layout';
 import {
   buildMetadataBlock,
@@ -62,11 +61,13 @@ export interface Object3mf {
   /** Human-readable part/object name (shown in the slicer tree). */
   name: string;
   /**
-   * World-space geometry, Three.js Y-up. May be an array (e.g. all parts on a
-   * laser plate); each entry is welded as an independent solid (never fused
-   * across solids) so touching parts stay manifold. Ignored when `parts` is set.
+   * World-space geometry, **Y-up** — a Three.js `BufferGeometry` or a raw
+   * {@link RawMesh} (`{ position, index? }`, so STL/OBJ/any parser works without
+   * three). May be an array (e.g. all parts on a laser plate); each entry is
+   * welded as an independent solid (never fused across solids) so touching parts
+   * stay manifold. Ignored when `parts` is set.
    */
-  geometry: THREE.BufferGeometry | THREE.BufferGeometry[];
+  geometry: GeometryInput | GeometryInput[];
   /**
    * 1-based print plate this object should sit on. Objects sharing a plate are
    * auto-arranged together on one bed; different plates each get their own bed
@@ -211,11 +212,12 @@ function resizeFilaments(obj: Record<string, unknown>, colours: string[]): void 
 
 /** Synthetic mesh (bbox only, never emitted) for a parts-object, so layout has bounds. */
 function partsBoundsMesh(parts: MeshedPart[]): MeshXml {
-  const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-  const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  const min: V3 = { x: Infinity, y: Infinity, z: Infinity };
+  const max: V3 = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of parts) {
-    min.min(p.mesh.bbox.min);
-    max.max(p.mesh.bbox.max);
+    const b = p.mesh.bbox;
+    min.x = Math.min(min.x, b.min.x); min.y = Math.min(min.y, b.min.y); min.z = Math.min(min.z, b.min.z);
+    max.x = Math.max(max.x, b.max.x); max.y = Math.max(max.y, b.max.y); max.z = Math.max(max.z, b.max.z);
   }
   return { xml: '', triangleCount: 0, bbox: { min, max } };
 }

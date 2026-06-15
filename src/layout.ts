@@ -1,5 +1,5 @@
-import * as THREE from 'three';
 import { fmt } from './util';
+import { Bounds, V3 } from './mesh';
 import {
   InstanceTransform,
   MeshedObject,
@@ -68,18 +68,15 @@ function applyMat3(a: number[], x: number, y: number, z: number): [number, numbe
 }
 
 /** Transform an AABB by a linear 3×3 (8 corners) and return the new AABB. */
-function transformBounds(
-  lin: number[],
-  bbox: { min: THREE.Vector3; max: THREE.Vector3 }
-): { min: THREE.Vector3; max: THREE.Vector3 } {
+function transformBounds(lin: number[], bbox: Bounds): Bounds {
   const isIdentity =
     lin[0] === 1 && lin[1] === 0 && lin[2] === 0 &&
     lin[3] === 0 && lin[4] === 1 && lin[5] === 0 &&
     lin[6] === 0 && lin[7] === 0 && lin[8] === 1;
   if (isIdentity) return bbox;
   const { min, max } = bbox;
-  const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
-  const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  const lo: V3 = { x: Infinity, y: Infinity, z: Infinity };
+  const hi: V3 = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const X of [min.x, max.x])
     for (const Y of [min.y, max.y])
       for (const Z of [min.z, max.z]) {
@@ -91,14 +88,14 @@ function transformBounds(
 }
 
 /** An object's world-space AABB: union of its parts (if any) else its mesh, each through its linear transform. */
-function worldBounds(o: MeshedObject): { min: THREE.Vector3; max: THREE.Vector3 } {
+function worldBounds(o: MeshedObject): Bounds {
   if (o.parts && o.parts.length) {
-    const lo = new THREE.Vector3(Infinity, Infinity, Infinity);
-    const hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    const lo: V3 = { x: Infinity, y: Infinity, z: Infinity };
+    const hi: V3 = { x: -Infinity, y: -Infinity, z: -Infinity };
     for (const p of o.parts) {
       const b = transformBounds(p.lin, p.mesh.bbox);
-      lo.min(b.min);
-      hi.max(b.max);
+      lo.x = Math.min(lo.x, b.min.x); lo.y = Math.min(lo.y, b.min.y); lo.z = Math.min(lo.z, b.min.z);
+      hi.x = Math.max(hi.x, b.max.x); hi.y = Math.max(hi.y, b.max.y); hi.z = Math.max(hi.z, b.max.z);
     }
     return { min: lo, max: hi };
   }

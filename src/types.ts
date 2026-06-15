@@ -3,8 +3,7 @@
  * `mesh`/`layout`/`model`/`extras` can reference them without import cycles
  * (`build3mf.ts` is the orchestrator and imports all of these).
  */
-import * as THREE from 'three';
-import { MeshXml, TrianglePaint } from './mesh';
+import { GeometryInput, MeshXml, TrianglePaint } from './mesh';
 import { ProcessSettings } from './params';
 
 export interface Vec3 {
@@ -42,8 +41,8 @@ export type PartSubtype =
 export interface Part3mf {
   /** Part name shown in the slicer tree. */
   name: string;
-  /** World-space geometry, Three.js Y-up (welded per entry, like a normal object). */
-  geometry: THREE.BufferGeometry | THREE.BufferGeometry[];
+  /** World-space geometry, Y-up — a THREE.BufferGeometry or a raw {@link RawMesh} (welded per entry). */
+  geometry: GeometryInput | GeometryInput[];
   /** Part role. Default `normal_part`. */
   subtype?: PartSubtype;
   /** 1-based filament slot for this part. Default inherits the object's. */

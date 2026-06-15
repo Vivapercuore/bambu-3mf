@@ -117,3 +117,29 @@ describe('geometryToMesh — painting', () => {
     expect(m.xml).toContain('paint_supports="4"');
   });
 });
+
+describe('geometryToMesh — raw mesh input (no three needed)', () => {
+  const tri = [1, 0, 0, 0, 0, 0, 0, 0, 3]; // same coords as the THREE mapping test
+
+  test('RawMesh { position } produces the same output as a THREE geometry', () => {
+    const fromThree = geometryToMesh(geom(tri));
+    const fromRaw = geometryToMesh({ position: tri });
+    expect(fromRaw.xml).toBe(fromThree.xml);
+    expect(fromRaw.triangleCount).toBe(1);
+  });
+
+  test('accepts a typed array and an index (triangle soup expansion)', () => {
+    // a quad as 4 unique verts + 6-entry index → 2 triangles, welded to 4 verts
+    const position = new Float32Array([0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1]);
+    const index = new Uint32Array([0, 1, 2, 0, 2, 3]);
+    const m = geometryToMesh({ position, index });
+    expect(m.triangleCount).toBe(2);
+    expect(vertexCount(m.xml)).toBe(4);
+  });
+
+  test('raw and THREE solids can be mixed in one object, with painting', () => {
+    const m = geometryToMesh([quad(), { position: tri }], { color: (t) => (t === 2 ? 2 : 0) });
+    expect(m.triangleCount).toBe(3); // 2 (quad) + 1 (raw)
+    expect(m.xml).toContain('paint_color="8"'); // face index 2 = the raw triangle
+  });
+});

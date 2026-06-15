@@ -46,7 +46,7 @@
   },
   "peerDependenciesMeta": {
     "three": {
-      "optional": false
+      "optional": true
     }
   },
   "dependencies": {

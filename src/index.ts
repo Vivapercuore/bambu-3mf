@@ -20,7 +20,16 @@ export {
   geometryToMesh,
   encodePaintFacet,
 } from './mesh';
-export type { MeshXml, TrianglePaint, PaintInput } from './mesh';
+export type {
+  MeshXml,
+  TrianglePaint,
+  PaintInput,
+  RawMesh,
+  MeshLike,
+  GeometryInput,
+  V3,
+  Bounds,
+} from './mesh';
 
 // Per-plate config, custom gcode, slice info, layer-range / thumbnail writers ---------
 export {

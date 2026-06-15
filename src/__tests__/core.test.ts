@@ -120,4 +120,16 @@ describe('pack3mfFromConfig — pure core', () => {
     expect(f['3D/Objects/colorparts.model']).toBeDefined();
     expect(f['Metadata/model_settings.config']).toContain('subtype="modifier_part"');
   });
+
+  test('accepts a raw mesh ({ position, index }) with no THREE geometry', () => {
+    // a unit tetrahedron as a raw triangle soup — could come from an STL parser
+    const position = [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0];
+    const index = [0, 2, 1, 0, 1, 3, 1, 2, 3, 2, 0, 3];
+    const zip = pack3mfFromConfig({ projectSettings: PROJECT_SETTINGS }, [
+      { name: 'from-raw', geometry: { position, index } },
+    ]);
+    const model = open(zip)['3D/3dmodel.model'];
+    expect(model).toContain('<object id="1" type="model">');
+    expect((model.match(/<triangle /g) || []).length).toBe(4);
+  });
 });
