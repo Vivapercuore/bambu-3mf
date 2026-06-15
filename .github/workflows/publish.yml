@@ -1,0 +1,38 @@
+name: Publish to npm
+
+# 推送 v* 标签时自动发布；也可在 Actions 页手动触发（workflow_dispatch）。
+# 发布的是当前 package.json 里的 version，与 npm registry 上不存在的版本号才会成功。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write # npm provenance（供应链溯源签名）
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
