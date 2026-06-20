@@ -16,6 +16,12 @@
   ],
   "license": "MIT",
   "author": "vivapercuore",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vivapercuore/bambu-3mf.git"
+  },
+  "homepage": "https://github.com/Vivapercuore/bambu-3mf#readme",
+  "bugs": "https://github.com/Vivapercuore/bambu-3mf/issues",
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
